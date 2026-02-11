@@ -1,0 +1,34 @@
+
+import time
+import psutil
+
+def main():
+    total_bytes = psutil.virtual_memory().total
+    total_mb = total_bytes // (1024 * 1024)
+
+    
+    ratio = 1
+    mb = int(total_mb * ratio)
+
+    blocks = []
+    one_mb = 1024 * 1024
+
+    print(f"Teljes RAM: ~{total_mb} MB")
+    print(f"Lefoglalás: ~{mb} MB ({int(ratio*100)}%). Kilépés: Ctrl+C")
+
+    try:
+        for i in range(mb):
+            blocks.append(bytearray(one_mb))
+            if (i + 1) % 500 == 0:
+                print(f"{i+1} MB lefoglalva...")
+        print("Kész. Memória terhelés aktív. Ctrl+C a kilépéshez.")
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nLeállítás...")
+    finally:
+        blocks.clear()
+        print("Memória felszabadítva.")
+
+if __name__ == "__main__":
+    main()

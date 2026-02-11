@@ -1,0 +1,31 @@
+
+import os
+from multiprocessing import Process
+
+def burn():
+    x = 0
+    while True:
+        x = (x + 1) % 1_000_000  
+
+def main():
+    workers = os.cpu_count() or 1  
+    procs = [Process(target=burn) for _ in range(workers)]
+
+    for p in procs:
+        p.start()
+
+    print(f"CPU terhelés fut {workers} magon. Kilépés: Ctrl+C")
+    try:
+        for p in procs:
+            p.join()
+    except KeyboardInterrupt:
+        print("\nLeállítás...")
+    finally:
+        for p in procs:
+            if p.is_alive():
+                p.terminate()
+        for p in procs:
+            p.join()
+
+if __name__ == "__main__":
+    main()
