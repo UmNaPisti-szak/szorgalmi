@@ -1,0 +1,109 @@
+01 - Fogalomfelismerés
+
+\x -> x * 2 -> lambda függvény
+f . g (pont operátor) -> függvénykompozíció
+add 5 (csak egy param, visszaad fnv-t) -> részleges alkalmazás / currying
+map f xs, filter p xs -> magasabb rendű függvények
+foldl (+) 0 [1,2,3] -> fold / redukció
+f [] = 0   f (x:xs) = ... -> rekurzió mintamatchinggel
+take 10 [1..] (végtelen lista) -> lusta kiértékelés
+Ugyanarra a bemenetre mindig ugyanaz az eredmény -> tiszta függvény
+A kifejezés értéke nem függ helyétől a kódban -> referenciális transzparencia
+Az érték, amiből már nem lehet tovább redukálni -> normál forma
+
+02 - Redukciós lépések
+
+a)
+(\x -> x + x) 5
+1. lépés: 5 + 5
+2. lépés: 10
+Normál forma: 10
+
+b)
+(a) 2 + 3 * 4
+Normál forma: 14
+
+(b) map (*2) [1,2]
+Normál forma: [2,4]
+
+(c) let x = x in x
+Normál forma: nincs
+Indok: végtelen önhivatkozás / nem terminál
+
+03 - Tail-rekurzió vs sima rekurzió
+
+A:
+szorzat [] = 1
+szorzat (x:xs) = x * szorzat xs
+
+Tail? NEM-TAIL
+Indok: a rekurzív hívás után még szorzás történik.
+
+B:
+szorzatT [] acc = acc
+szorzatT (x:xs) acc = szorzatT xs (x * acc)
+
+Tail? TAIL
+Indok: a rekurzív hívás az utolsó művelet.
+
+C:
+osszeg [] = 0
+osszeg (x:xs) = x + osszeg xs
+
+Átalakítva tail-recursive-vá:
+osszegT [] acc = acc
+osszegT (x:xs) acc = osszegT xs (acc + x)
+
+Példa hívás:
+osszeg xs = osszegT xs 0
+
+04 - Curry és függvényösszetétel
+
+a)
+add x y = x + y
+add3 = add 3
+
+add3 típusa: Num a => a -> a
+add3 7 -> 10
+
+map (add 10) [1,2,3] -> [11,12,13]
+
+b)
+duplaPlusz1 = (+1) . (*2)
+
+duplaPlusz1 4
+lépések:
+4 * 2 = 8
+8 + 1 = 9
+eredmény: 9
+
+Függvény:
+kombinalt = (^2) . subtract 1 . (*3)
+
+kombinalt 5
+5 * 3 = 15
+15 - 1 = 14
+14 ^ 2 = 196
+
+05 - Lusta vs mohó kiértékelés
+
+take 5 [1..] – végtelen lista első 5 eleme -> LUSTA kezeli
+
+sum [1..100] – véges lista összege -> MINDKETTŐ kezeli
+
+Fibonacci sorozat végtelen listáig -> LUSTA kezeli
+
+Ha egy függvény argumentumát soha nem használjuk fel -> LUSTA kezeli, MOHÓ lefagyhat/hibázhat
+
+06 - Saját Brainrot karakter
+
+Név: Monad Móric
+Fogalom: monád
+Személyiség: mindent becsomagol, de közben rendet tart a káoszban
+Idézet: "Előbb csomagolunk, aztán láncolunk!"
+Kódpélda:
+
+safeDiv x 0 = Nothing
+safeDiv x y = Just (x / y)
+
+eredmeny = Just 10 >>= (\x -> safeDiv x 2)
