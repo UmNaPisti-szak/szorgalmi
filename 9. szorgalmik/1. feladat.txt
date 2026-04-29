@@ -1,0 +1,259 @@
+// Z3a7.java
+// z3a7.cpp átírása Java nyelvre
+//
+// Fordítás:
+//   javac Z3a7.java
+//
+// Futtatás:
+//   java Z3a7 input.txt -o output.txt
+
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+public class Z3a7 {
+
+    private static class Node {
+        private final char letter;
+        private Node zeroChild;
+        private Node oneChild;
+
+        Node(char letter) {
+            this.letter = letter;
+        }
+
+        Node zeroChild() {
+            return zeroChild;
+        }
+
+        Node oneChild() {
+            return oneChild;
+        }
+
+        void setZeroChild(Node child) {
+            zeroChild = child;
+        }
+
+        void setOneChild(Node child) {
+            oneChild = child;
+        }
+
+        char getLetter() {
+            return letter;
+        }
+    }
+
+    private static class LzwBinaryTree {
+        private final Node root = new Node('/');
+        private Node current = root;
+
+        private int depth;
+        private int maxDepth;
+        private int leafDepthSum;
+        private int leafCount;
+        private double mean;
+        private double varianceSum;
+
+        void addBit(char bit) {
+            if (bit == '0') {
+                if (current.zeroChild() == null) {
+                    current.setZeroChild(new Node('0'));
+                    current = root;
+                } else {
+                    current = current.zeroChild();
+                }
+            } else {
+                if (current.oneChild() == null) {
+                    current.setOneChild(new Node('1'));
+                    current = root;
+                } else {
+                    current = current.oneChild();
+                }
+            }
+        }
+
+        void printTree(PrintWriter writer) {
+            depth = 0;
+            printTree(root, writer);
+        }
+
+        private void printTree(Node node, PrintWriter writer) {
+            if (node == null) {
+                return;
+            }
+
+            depth++;
+            printTree(node.oneChild(), writer);
+
+            for (int i = 0; i < depth; i++) {
+                writer.print("---");
+            }
+
+            writer.println(node.getLetter() + "(" + (depth - 1) + ")");
+            printTree(node.zeroChild(), writer);
+            depth--;
+        }
+
+        int getDepth() {
+            depth = 0;
+            maxDepth = 0;
+            calculateDepth(root);
+            return maxDepth - 1;
+        }
+
+        private void calculateDepth(Node node) {
+            if (node == null) {
+                return;
+            }
+
+            depth++;
+
+            if (depth > maxDepth) {
+                maxDepth = depth;
+            }
+
+            calculateDepth(node.oneChild());
+            calculateDepth(node.zeroChild());
+            depth--;
+        }
+
+        double getMean() {
+            depth = 0;
+            leafDepthSum = 0;
+            leafCount = 0;
+            calculateMean(root);
+
+            if (leafCount == 0) {
+                mean = 0.0;
+            } else {
+                mean = (double) leafDepthSum / leafCount;
+            }
+
+            return mean;
+        }
+
+        private void calculateMean(Node node) {
+            if (node == null) {
+                return;
+            }
+
+            depth++;
+            calculateMean(node.oneChild());
+            calculateMean(node.zeroChild());
+            depth--;
+
+            if (node.oneChild() == null && node.zeroChild() == null) {
+                leafCount++;
+                leafDepthSum += depth;
+            }
+        }
+
+        double getVariance() {
+            mean = getMean();
+            varianceSum = 0.0;
+            depth = 0;
+            leafCount = 0;
+
+            calculateVariance(root);
+
+            if (leafCount - 1 > 0) {
+                return Math.sqrt(varianceSum / (leafCount - 1));
+            }
+
+            return Math.sqrt(varianceSum);
+        }
+
+        private void calculateVariance(Node node) {
+            if (node == null) {
+                return;
+            }
+
+            depth++;
+            calculateVariance(node.oneChild());
+            calculateVariance(node.zeroChild());
+            depth--;
+
+            if (node.oneChild() == null && node.zeroChild() == null) {
+                leafCount++;
+                varianceSum += (depth - mean) * (depth - mean);
+            }
+        }
+    }
+
+    private static void usage() {
+        System.out.println("Usage: lzwtree in_file -o out_file");
+    }
+
+    public static void main(String[] args) {
+        if (args.length != 3) {
+            usage();
+            System.exit(-1);
+        }
+
+        String inputFileName = args[0];
+
+        if (!"-o".equals(args[1])) {
+            usage();
+            System.exit(-2);
+        }
+
+        String outputFileName = args[2];
+        LzwBinaryTree tree = new LzwBinaryTree();
+
+        try (
+            FileInputStream inputFile = new FileInputStream(inputFileName);
+            PrintWriter outputFile = new PrintWriter(new FileWriter(outputFileName))
+        ) {
+            int byteValue;
+
+            while ((byteValue = inputFile.read()) != -1) {
+                if (byteValue == 0x0A) {
+                    break;
+                }
+            }
+
+            boolean inComment = false;
+
+            while ((byteValue = inputFile.read()) != -1) {
+                if (byteValue == 0x3E) {
+                    inComment = true;
+                    continue;
+                }
+
+                if (byteValue == 0x0A) {
+                    inComment = false;
+                    continue;
+                }
+
+                if (inComment) {
+                    continue;
+                }
+
+                if (byteValue == 0x4E) {
+                    continue;
+                }
+
+                for (int i = 0; i < 8; i++) {
+                    if ((byteValue & 0x80) != 0) {
+                        tree.addBit('1');
+                    } else {
+                        tree.addBit('0');
+                    }
+
+                    byteValue = (byteValue << 1) & 0xFF;
+                }
+            }
+
+            tree.printTree(outputFile);
+            outputFile.println("depth = " + tree.getDepth());
+            outputFile.println("mean = " + tree.getMean());
+            outputFile.println("var = " + tree.getVariance());
+
+        } catch (IOException exception) {
+            System.out.println(inputFileName + " nem letezik...");
+            usage();
+            System.exit(-3);
+        }
+    }
+}

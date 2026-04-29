@@ -1,0 +1,233 @@
+# z3a7.rb
+# z3a7.cpp átírása Ruby nyelvre
+#
+# Használat:
+#   ruby z3a7.rb input.txt -o output.txt
+
+class Csomopont
+  attr_accessor :bal_nulla, :jobb_egy
+  attr_reader :betu
+
+  def initialize(betu = '/')
+    @betu = betu
+    @bal_nulla = nil
+    @jobb_egy = nil
+  end
+
+  def nullas_gyermek
+    @bal_nulla
+  end
+
+  def egyes_gyermek
+    @jobb_egy
+  end
+end
+
+class LZWBinFa
+  def initialize
+    @gyoker = Csomopont.new('/')
+    @fa = @gyoker
+
+    @melyseg = 0
+    @max_melyseg = 0
+    @atlagosszeg = 0
+    @atlagdb = 0
+    @atlag = 0.0
+    @szorasosszeg = 0.0
+  end
+
+  def add_bit(bit)
+    if bit == '0'
+      if @fa.nullas_gyermek.nil?
+        @fa.bal_nulla = Csomopont.new('0')
+        @fa = @gyoker
+      else
+        @fa = @fa.nullas_gyermek
+      end
+    else
+      if @fa.egyes_gyermek.nil?
+        @fa.jobb_egy = Csomopont.new('1')
+        @fa = @gyoker
+      else
+        @fa = @fa.egyes_gyermek
+      end
+    end
+  end
+
+  def kiir(file)
+    @melyseg = 0
+    kiir_rekurziv(@gyoker, file)
+  end
+
+  def kiir_rekurziv(elem, file)
+    return if elem.nil?
+
+    @melyseg += 1
+
+    kiir_rekurziv(elem.egyes_gyermek, file)
+
+    @melyseg.times do
+      file.print '---'
+    end
+
+    file.puts "#{elem.betu}(#{@melyseg - 1})"
+
+    kiir_rekurziv(elem.nullas_gyermek, file)
+
+    @melyseg -= 1
+  end
+
+  def get_melyseg
+    @melyseg = 0
+    @max_melyseg = 0
+    rmelyseg(@gyoker)
+    @max_melyseg - 1
+  end
+
+  def rmelyseg(elem)
+    return if elem.nil?
+
+    @melyseg += 1
+
+    if @melyseg > @max_melyseg
+      @max_melyseg = @melyseg
+    end
+
+    rmelyseg(elem.egyes_gyermek)
+    rmelyseg(elem.nullas_gyermek)
+
+    @melyseg -= 1
+  end
+
+  def get_atlag
+    @melyseg = 0
+    @atlagosszeg = 0
+    @atlagdb = 0
+
+    ratlag(@gyoker)
+
+    if @atlagdb > 0
+      @atlag = @atlagosszeg.to_f / @atlagdb
+    else
+      @atlag = 0.0
+    end
+
+    @atlag
+  end
+
+  def ratlag(elem)
+    return if elem.nil?
+
+    @melyseg += 1
+
+    ratlag(elem.egyes_gyermek)
+    ratlag(elem.nullas_gyermek)
+
+    @melyseg -= 1
+
+    if elem.egyes_gyermek.nil? && elem.nullas_gyermek.nil?
+      @atlagdb += 1
+      @atlagosszeg += @melyseg
+    end
+  end
+
+  def get_szoras
+    @atlag = get_atlag
+    @szorasosszeg = 0.0
+    @melyseg = 0
+    @atlagdb = 0
+
+    rszoras(@gyoker)
+
+    if @atlagdb - 1 > 0
+      Math.sqrt(@szorasosszeg / (@atlagdb - 1))
+    else
+      Math.sqrt(@szorasosszeg)
+    end
+  end
+
+  def rszoras(elem)
+    return if elem.nil?
+
+    @melyseg += 1
+
+    rszoras(elem.egyes_gyermek)
+    rszoras(elem.nullas_gyermek)
+
+    @melyseg -= 1
+
+    if elem.egyes_gyermek.nil? && elem.nullas_gyermek.nil?
+      @atlagdb += 1
+      @szorasosszeg += (@melyseg - @atlag) * (@melyseg - @atlag)
+    end
+  end
+end
+
+def usage
+  puts 'Usage: lzwtree in_file -o out_file'
+end
+
+if ARGV.length != 3
+  usage
+  exit(-1)
+end
+
+input_file_name = ARGV[0]
+
+if ARGV[1] != '-o'
+  usage
+  exit(-2)
+end
+
+output_file_name = ARGV[2]
+
+unless File.exist?(input_file_name)
+  puts "#{input_file_name} nem letezik..."
+  usage
+  exit(-3)
+end
+
+bin_fa = LZWBinFa.new
+
+File.open(input_file_name, 'rb') do |input_file|
+  File.open(output_file_name, 'w') do |output_file|
+
+    while (byte = input_file.read(1))
+      break if byte.bytes[0] == 0x0A
+    end
+
+    kommentben = false
+
+    while (byte = input_file.read(1))
+      b = byte.bytes[0]
+
+      if b == 0x3E
+        kommentben = true
+        next
+      end
+
+      if b == 0x0A
+        kommentben = false
+        next
+      end
+
+      next if kommentben
+      next if b == 0x4E
+
+      8.times do
+        if (b & 0x80) != 0
+          bin_fa.add_bit('1')
+        else
+          bin_fa.add_bit('0')
+        end
+
+        b = (b << 1) & 0xFF
+      end
+    end
+
+    bin_fa.kiir(output_file)
+    output_file.puts "depth = #{bin_fa.get_melyseg}"
+    output_file.puts "mean = #{bin_fa.get_atlag}"
+    output_file.puts "var = #{bin_fa.get_szoras}"
+  end
+end
