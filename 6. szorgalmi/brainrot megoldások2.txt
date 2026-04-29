@@ -1,0 +1,58 @@
+01 - Párosítás
+
+class Kutya { ... }; -> osztály
+Kutya k("Rex"); -> objektum példányosítás
+Kutya(string n) { nev=n; } -> konstruktor
+~Kutya() { delete adat; } -> destruktor
+class Kutya : public Allat -> öröklődés
+virtual void hangotAd() = 0; -> absztrakt (pure virtual) függvény
+void f() override { ... } -> felüldefiniálás (override)
+private: int egyenleg; -> privát adattag (enkapszuláció)
+Allat* a = new Kutya(); -> polimorfizmus (bázis pointer, leszármazott objektum)
+
+02
+
+a)
+Auto(std::string m)
+~Auto()
+delete ev;
+
+b)
+private
+protected
+public
+
+c)
+Kutya hang
+Macska hang
+Kutya hang
+
+03
+
+X = interfész
+mert: minden függvény pure virtual
+
+Y = absztrakt osztály
+mert: van legalább egy megvalósított függvény és adattag
+
+04
+
+Kutya k; k.ugat(); -> EARLY
+Allat* a = new Kutya(); a->hangotAd(); -> LATE
+osszeAdd<int>(3,4); -> EARLY
+függvény overload -> EARLY
+virtual void f() leszármazottban -> LATE
+
+05
+
+Jarmu (absztrakt)
+- protected: sebesseg
+- public: virtual halad() = 0;
+
+MotorosJarmu : public Jarmu (absztrakt)
+- protected: motorTeljesitmeny
+- public: virtual halad() = 0;
+
+Auto : public MotorosJarmu (konkrét)
+- private: marka
+- public: void halad() override { /* implementáció */ }
