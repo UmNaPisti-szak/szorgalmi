@@ -1,0 +1,45 @@
+01 - Melyik karakter vagyok?
+
+int x = 10; -> változó
+int* p = &x; -> pointer
+void f(int x) { x=99; } -> érték szerinti paraméterátadás
+void f(int& x) { x=99; } -> referencia szerinti paraméterátadás
+int* p = nullptr; -> null pointer
+{ int n=5; } -> lokális változó (scope)
+template<typename T> T add(T a, T b) -> template (sablon)
+return n * f(n-1); -> rekurzió
+
+02 - Kiegészítés
+
+a)
+int chad = 5;
+kimenet: 5
+
+b)
+kimenet: 77
+
+c)
+if (n == 0) return 0;
+eredmény: 10
+
+03 - Hibák
+
+a)
+null pointer dereferálás (crash / undefined behavior)
+
+b)
+memóriaszivárgás (malloc után nincs free)
+
+c)
+végtelen rekurzió (nincs base case → stack overflow)
+
+04 - Saját karakter
+
+Név: Stack Steve
+Fogalom: stack memória
+Személyiség: gyors, de limitált
+Idézet: "Ami bemegy, annak ki is kell jönnie!"
+Példa:
+void f() {
+    int x = 10;
+}
