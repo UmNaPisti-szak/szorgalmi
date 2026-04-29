@@ -1,0 +1,71 @@
+#include <iostream>
+
+struct DataPair {
+    int first_value;
+    int second_value;
+};
+
+void SortDataPairs(DataPair* data, int length) {
+    for (int i = 0; i < length - 1; ++i) {
+        for (int j = 0; j < length - i - 1; ++j) {
+            if (data[j].first_value > data[j + 1].first_value) {
+                DataPair temp = data[j];
+                data[j] = data[j + 1];
+                data[j + 1] = temp;
+            }
+        }
+    }
+}
+
+int CalculateResult(const DataPair& pair) {
+    const int first = pair.first_value;
+    const int second = pair.second_value;
+
+    if (first % 2 == 0 && second % 2 == 0) {
+        return first * second;
+    }
+
+    if (first % 2 == 0 && second % 2 != 0) {
+        return first + second;
+    }
+
+    if (first % 2 != 0 && second % 2 == 0) {
+        return first - second;
+    }
+
+    return first;
+}
+
+void PrintHeader() {
+    std::cout << "===" << std::endl;
+    std::cout << "Output:" << std::endl;
+    std::cout << "---" << std::endl;
+}
+
+void PrintResults(const DataPair* data, int length) {
+    for (int i = 0; i < length; ++i) {
+        std::cout << CalculateResult(data[i]) << std::endl;
+    }
+}
+
+void ProcessData(DataPair* data, int length) {
+    SortDataPairs(data, length);
+    PrintHeader();
+    PrintResults(data, length);
+}
+
+int main() {
+    DataPair data[] = {
+        {5, 1},
+        {2, 4},
+        {3, 7},
+        {1, 6},
+        {4, 5}
+    };
+
+    const int data_length = sizeof(data) / sizeof(data[0]);
+
+    ProcessData(data, data_length);
+
+    return 0;
+}
